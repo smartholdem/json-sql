@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/smartholdem/json-sql.svg?branch=master)](https://travis-ci.org/smartholdem/json-sql)
+
 # JSON-SQL
 
 Node.js library for mapping mongo-style query objects to SQL queries.
