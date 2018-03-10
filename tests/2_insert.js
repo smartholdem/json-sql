@@ -14,25 +14,19 @@ describe('Insert', function() {
 	});
 
 	it('should be ok with `values` property', function() {
-		var date = new Date();
 		var result = jsonSql.build({
 			type: 'insert',
 			table: 'users',
 			values: {
-				id: 1,
-				name: 'Max',
-				date: date
+				name: 'Max'
 			}
 		});
 
-		expect(result.query).to.be.equal(
-			'insert into "users" ("id", "name", "date") values (1, $p1, $p2);'
-		);
-		expect(result.values).to.be.eql({p1: 'Max', p2: date});
+		expect(result.query).to.be.equal('insert into "users" ("name") values (${p1});');
+		expect(result.values).to.be.eql({p1: 'Max'});
 	});
 
 	it('should be ok with `with` property', function() {
-		var date = new Date();
 		var result = jsonSql.build({
 			'with': [{
 				name: 't_1',
@@ -46,20 +40,18 @@ describe('Insert', function() {
 				name: 'Max',
 				age: 17,
 				lastVisit: null,
-				active: true,
-				date: date
+				active: true
 			}
 		});
 
 		expect(result.query).to.be.equal(
 			'with "t_1" as (select * from "t_1") insert into "users" ' +
-			'("name", "age", "lastVisit", "active", "date") values ($p1, 17, null, true, $p2);'
+			'("name", "age", "lastVisit", "active") values (${p1}, 17, null, true);'
 		);
-		expect(result.values).to.be.eql({p1: 'Max', p2: date});
+		expect(result.values).to.be.eql({p1: 'Max'});
 	});
 
 	it('should be ok with `returning` property', function() {
-		var date = new Date();
 		var result = jsonSql.build({
 			type: 'insert',
 			table: 'users',
@@ -67,16 +59,15 @@ describe('Insert', function() {
 				name: 'Max',
 				age: 17,
 				lastVisit: null,
-				active: true,
-				date: date
+				active: true
 			},
 			returning: ['users.*']
 		});
 
 		expect(result.query).to.be.equal(
-			'insert into "users" ("name", "age", "lastVisit", "active", "date") ' +
-			'values ($p1, 17, null, true, $p2) returning "users".*;'
+			'insert into "users" ("name", "age", "lastVisit", "active") ' +
+			'values (${p1}, 17, null, true) returning "users".*;'
 		);
-		expect(result.values).to.be.eql({p1: 'Max', p2: date});
+		expect(result.values).to.be.eql({p1: 'Max'});
 	});
 });

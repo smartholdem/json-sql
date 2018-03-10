@@ -16,12 +16,9 @@ describe('Builder', function() {
 
 		expect(jsonSql.dialect.blocks).to.be.ok;
 		expect(jsonSql.dialect.templates).to.be.ok;
-		expect(jsonSql.dialect.operators).to.be.ok;
-		expect(jsonSql.dialect.operators.comparison).to.be.ok;
-		expect(jsonSql.dialect.operators.logical).to.be.ok;
-		expect(jsonSql.dialect.operators.fetching).to.be.ok;
-		expect(jsonSql.dialect.operators.state).to.be.ok;
+		expect(jsonSql.dialect.conditions).to.be.ok;
 		expect(jsonSql.dialect.modifiers).to.be.ok;
+		expect(jsonSql.dialect.logicalOperators).to.be.ok;
 	});
 
 	it('should throw error with wrong `type` property', function() {
@@ -136,61 +133,6 @@ describe('Builder', function() {
 		expect(result.values).to.be.eql({});
 	});
 
-	it('should throw error with both `with` and `withRecursive` clauses', function() {
-		expect(function() {
-			jsonSql.build({
-				'with': {
-					payments: {
-						select: {
-							table: 'payments'
-						}
-					}
-				},
-				withRecursive: {
-					phones: {
-						select: {
-							table: 'phones'
-						}
-					}
-				},
-				table: 'users'
-			});
-		}).to.throw('Wrong using `with`, `withRecursive` properties together in `select` clause');
-	});
-
-	it('should be ok with array in `withRecursive` clause', function() {
-		var result = jsonSql.build({
-			withRecursive: [{
-				name: 'payments',
-				select: {
-					table: 'payments'
-				}
-			}],
-			table: 'users'
-		});
-
-		expect(result.query).to.be.equal('with recursive "payments" as (select * from "payments") ' +
-			'select * from "users";');
-		expect(result.values).to.be.eql({});
-	});
-
-	it('should be ok with object in `withRecursive` clause', function() {
-		var result = jsonSql.build({
-			withRecursive: {
-				payments: {
-					select: {
-						table: 'payments'
-					}
-				}
-			},
-			table: 'users'
-		});
-
-		expect(result.query).to.be.equal('with recursive "payments" as (select * from "payments") ' +
-			'select * from "users";');
-		expect(result.values).to.be.eql({});
-	});
-
 	it('should create array values with option `namedValues` = false', function() {
 		jsonSql.configure({
 			namedValues: false
@@ -203,7 +145,7 @@ describe('Builder', function() {
 			condition: {name: 'John'}
 		});
 
-		expect(result.query).to.be.equal('select * from "users" where "name" = $1;');
+		expect(result.query).to.be.equal('select * from "users" where "name" = ${1};');
 		expect(result.values).to.be.eql(['John']);
 	});
 
@@ -217,7 +159,7 @@ describe('Builder', function() {
 			condition: {name: 'John'}
 		});
 
-		expect(result.query).to.be.equal('select * from "users" where "name" = @p1;');
+		expect(result.query).to.be.equal('select * from "users" where "name" = @{p1};');
 		expect(result.values).to.be.eql({p1: 'John'});
 	});
 
@@ -227,9 +169,9 @@ describe('Builder', function() {
 			condition: {name: 'John'}
 		});
 
-		expect(result.query).to.be.equal('select * from "users" where "name" = @p1;');
+		expect(result.query).to.be.equal('select * from "users" where "name" = @{p1};');
 		expect(result.values).to.be.eql({p1: 'John'});
-		expect(result.prefixValues()).to.be.eql({'@p1': 'John'});
+		expect(result.prefixValues()).to.be.eql({'@{p1}': 'John'});
 	});
 
 	it('should return array values with method `getValuesArray`', function() {
@@ -238,7 +180,7 @@ describe('Builder', function() {
 			condition: {name: 'John'}
 		});
 
-		expect(result.query).to.be.equal('select * from "users" where "name" = @p1;');
+		expect(result.query).to.be.equal('select * from "users" where "name" = @{p1};');
 		expect(result.values).to.be.eql({p1: 'John'});
 		expect(result.getValuesArray()).to.be.eql(['John']);
 	});
@@ -256,37 +198,10 @@ describe('Builder', function() {
 			condition: {name: 'John'}
 		});
 
-		expect(result.query).to.be.equal('select * from "users" where "name" = $1;');
+		expect(result.query).to.be.equal('select * from "users" where "name" = ${1};');
 		expect(result.values).to.be.eql(['John']);
-		expect(result.prefixValues()).to.be.eql({'$1': 'John'});
+		expect(result.prefixValues()).to.be.eql({'${1}': 'John'});
 		expect(result.getValuesObject()).to.be.eql({1: 'John'});
-	});
-
-	it('should throw if `indexedValues = false` and `namedValues = true`', function() {
-		expect(function() {
-			jsonSql.configure({
-				namedValues: true,
-				indexedValues: false
-			});
-		}).to.throw(
-			'Option `indexedValues`: false is not allowed ' +
-			'together with option `namedValues`: true'
-		);
-	});
-
-	it('should not use index for values with option `indexedValues` = false', function() {
-		jsonSql.configure({
-			namedValues: false,
-			indexedValues: false
-		});
-
-		var result = jsonSql.build({
-			table: 'users',
-			condition: {name: 'John'}
-		});
-
-		expect(result.query).to.be.equal('select * from "users" where "name" = $;');
-		expect(result.values).to.be.eql(['John']);
 	});
 
 	it('should create query without values with option `separatedValues` = false', function() {
@@ -297,19 +212,14 @@ describe('Builder', function() {
 		expect(jsonSql._values).to.not.be.ok;
 		expect(jsonSql._placeholderId).to.not.be.ok;
 
-		var date = new Date();
 		var result = jsonSql.build({
 			type: 'insert',
 			table: 'users',
-			values: {
-				name: 'John',
-				surname: 'Doe',
-				date: date
-			}
+			values: {name: 'John', surname: 'Doe'}
 		});
 
-		expect(result.query).to.be.equal('insert into "users" ("name", "surname", "date") values ' +
-			'(\'John\', \'Doe\', \'' + date.toISOString() + '\');');
+		expect(result.query).to.be.equal('insert into "users" ("name", "surname") values ' +
+			'(\'John\', \'Doe\');');
 		expect(result.values).to.not.be.ok;
 	});
 
@@ -325,7 +235,7 @@ describe('Builder', function() {
 				values: {name: 'John'}
 			});
 
-			expect(result.query).to.be.equal('insert into users (name) values ($p1);');
+			expect(result.query).to.be.equal('insert into users (name) values (${p1});');
 		}
 	);
 
@@ -343,7 +253,7 @@ describe('Builder', function() {
 			}
 		});
 
-		expect(result.query).to.be.equal('insert into "users" ("name", "users"."age") values ($p1, 22);');
+		expect(result.query).to.be.equal('insert into "users" ("name", "users"."age") values (${p1}, 22);');
 	});
 
 	it('shouldn\'t split identifiers by dots inside quotes', function() {
@@ -389,6 +299,6 @@ describe('Builder', function() {
 			}
 		});
 
-		expect(result.query).to.be.equal('insert into "users" ("name", "users"."age") values ($p1, 22);');
+		expect(result.query).to.be.equal('insert into "users" ("name", "users"."age") values (${p1}, 22);');
 	});
 });

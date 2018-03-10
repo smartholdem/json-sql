@@ -8,6 +8,7 @@
     - [configure(options)](#configureoptions)
     - [setDialect(name)](#setdialectname)
 * __[Queries](#queries)__
+    - [type: 'create'](#type-create)
     - [type: 'select'](#type-select)
     - [type: 'insert'](#type-insert)
     - [type: 'update'](#type-update)
@@ -69,17 +70,46 @@ Set options of json-sql builder instance.
 | `valuesPrefix` | `'$'` | Prefix for values placeholders<br>Option is used if `namedValues = true`. |
 | `dialect` | `'base'` | Active dialect. See setDialect for dialects list. |
 | `wrappedIdentifiers` | `true` | If `true` - wrap all identifiers with dialect wrapper (name -> "name"). |
-| `indexedValues` | `true` | If `true` - uses auto-generated id for values placeholders after the value prefix |
 
 ---
 
 ### setDialect(name)
 
-Set active dialect, name can has value `'base'`, `'mssql'`, `'mysql'`, `'postgresql'` or `'sqlite'`.
+Set active dialect, name can has value `'base'`, `'mssql'`, `'mysql'`, `'postrgresql'` or `'sqlite'`.
 
 ---
 
 ## Queries
+
+### type: 'create'
+
+>[ [tableFields](#tableFields) ]<br>
+>[ [table](#table) ]<br>
+>[ [foreignKeys](#foreignKeys) ]
+
+__Example:__
+
+``` js
+var sql = jsonSql.build({
+	type: 'create',
+	table: 'users',
+	tableFields: [
+		{
+			name: "name",
+			type: "String",
+			length: 16,
+			not_null: true,
+			unique: true,
+			default: "empty"
+		}
+	]
+});
+
+sql.query
+// create table if not exists "users"("name" varchar(16) NOT NULL default "empty" UNIQUE);
+```
+
+---
 
 ### type: 'select'
 
@@ -320,6 +350,53 @@ var sql = jsonSql.build({
 
 sql.query
 // select distinct * from "table";
+```
+
+---
+
+### tableFields
+
+Should be an `array`
+
+Contains array of table`s fields 
+
+---
+
+### foreignKeys
+
+Should be an `array`
+
+__Example:__
+
+``` js
+var result = jsonSql.build({
+	type: 'create',
+	table: 'users',
+	tableFields: [
+		{
+			name: "name",
+			type: "String",
+			length: 16,
+			not_null: true,
+			primary_key: true
+		},
+		{
+			name: "age",
+			type: "Number",
+			not_null: true
+		}
+	],
+	foreignKeys: [
+		{
+			field: "name",
+			table: "person",
+			table_field: "id"
+		}
+	]
+});
+
+sql.query
+// create table "users"(name varchar(16) NOT NULL PRIMARY KEY,age int NOT NULL, FOREIGN KEY (name) REFERENCES person(id));
 ```
 
 ---
@@ -1081,6 +1158,19 @@ var sql = jsonSql.build({
 
 sql.query
 // (select * from "table1") union (select * from "table2");
+
+//or for sqlite3
+jsonSql.setDialect("sqlite");
+var sql = jsonSql.build({
+    type: 'union',
+    unionqueries: [
+        {type: 'select', table: 'table1'},
+        {type: 'select', table: 'table2'}
+    ]
+});
+
+sql.query
+// select * from "table1" union select * from "table2";
 ```
 
 ---

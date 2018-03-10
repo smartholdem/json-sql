@@ -38,37 +38,17 @@ describe('Select', function() {
 	});
 
 	describe('fields', function() {
-		it('should be ok with empty fields array', function() {
+		it('should be ok with string array', function() {
 			var result = jsonSql.build({
 				table: 'users',
-				fields: []
+				fields: ['name', 'type']
 			});
 
-			expect(result.query).to.be.equal('select * from "users";');
+			expect(result.query).to.be.equal('select "name", "type" from "users";');
 			expect(result.values).to.be.eql({});
 		});
 
-		it('should be ok with empty fields object', function() {
-			var result = jsonSql.build({
-				table: 'users',
-				fields: {}
-			});
-
-			expect(result.query).to.be.equal('select * from "users";');
-			expect(result.values).to.be.eql({});
-		});
-
-		it('should be ok with simple array fields', function() {
-			var result = jsonSql.build({
-				table: 'users',
-				fields: [1, true, null, 'type']
-			});
-
-			expect(result.query).to.be.equal('select 1, true, null, "type" from "users";');
-			expect(result.values).to.be.eql({});
-		});
-
-		it('should be ok with object(`name`:`alias`)', function() {
+		it('should be ok with object(`name`: `alias`, ...)', function() {
 			var result = jsonSql.build({
 				table: 'users',
 				fields: {userAge: 'age', userScore: 'score'}
@@ -79,7 +59,7 @@ describe('Select', function() {
 			expect(result.values).to.be.eql({});
 		});
 
-		it('should be ok with object(`name`:`alias`) array', function() {
+		it('should be ok with array of objects(`name`: `alias`, ...)', function() {
 			var result = jsonSql.build({
 				table: 'users',
 				fields: [{userAge: 'age'}]
@@ -99,54 +79,33 @@ describe('Select', function() {
 			expect(result.values).to.be.eql({});
 		});
 
-		it('should be ok with object(`field.name`) array', function() {
+		it('should be ok with object(`field`, `table`) array', function() {
 			var result = jsonSql.build({
 				table: 'users',
-				fields: [{field: {name: 'address'}}]
-			});
-
-			expect(result.query).to.be.equal('select "address" from "users";');
-			expect(result.values).to.be.eql({});
-		});
-
-		it('should be ok with object(`name`,`table`) array', function() {
-			var result = jsonSql.build({
-				table: 'users',
-				fields: [{name: 'score', table: 'users'}]
+				fields: [{field: 'score', table: 'users'}]
 			});
 
 			expect(result.query).to.be.equal('select "users"."score" from "users";');
 			expect(result.values).to.be.eql({});
 		});
 
-		it('should be ok with object(`name`,`alias`) array', function() {
+		it('should be ok with object(`field`, `alias`) array', function() {
 			var result = jsonSql.build({
 				table: 'users',
-				fields: [{name: 'zoneName', alias: 'zone'}]
+				fields: [{field: 'zoneName', alias: 'zone'}]
 			});
 
 			expect(result.query).to.be.equal('select "zoneName" as "zone" from "users";');
 			expect(result.values).to.be.eql({});
 		});
 
-		it('should be ok with object(`name`,`table`,`alias`) array', function() {
+		it('should be ok with object(`field`, `table`, `alias`) array', function() {
 			var result = jsonSql.build({
 				table: 'users',
-				fields: [{name: 'zoneName', table: 'users', alias: 'zone'}]
+				fields: [{field: 'zoneName', table: 'users', alias: 'zone'}]
 			});
 
 			expect(result.query).to.be.equal('select "users"."zoneName" as "zone" from "users";');
-			expect(result.values).to.be.eql({});
-		});
-
-		it('should be ok with object(`name`,`table`,`alias`,`cast`) array', function() {
-			var result = jsonSql.build({
-				table: 'users',
-				fields: [{name: 'zoneName', table: 'users', alias: 'zone', cast: 'integer'}]
-			});
-
-			expect(result.query).to.be.equal('select cast("users"."zoneName" as integer) as "zone" from ' +
-				'"users";');
 			expect(result.values).to.be.eql({});
 		});
 
@@ -160,17 +119,17 @@ describe('Select', function() {
 			expect(result.values).to.be.eql({});
 		});
 
-		it('should be ok with object(`name`,`alias`)', function() {
+		it('should be ok with object(`field`, `alias`)', function() {
 			var result = jsonSql.build({
 				table: 'users',
-				fields: {zone: {name: 'zone_1', alias: 'zone'}}
+				fields: {zone: {field: 'zone_1', alias: 'zone'}}
 			});
 
 			expect(result.query).to.be.equal('select "zone_1" as "zone" from "users";');
 			expect(result.values).to.be.eql({});
 		});
 
-		it('should be ok with object(`table`,`alias`)', function() {
+		it('should be ok with object(`table`, `alias`)', function() {
 			var result = jsonSql.build({
 				table: 'users',
 				fields: {score: {table: 'users', alias: 's'}}
@@ -180,24 +139,13 @@ describe('Select', function() {
 			expect(result.values).to.be.eql({});
 		});
 
-		it('should be ok with object(`name`,`table`,`alias`)', function() {
+		it('should be ok with object(`field`, `table`, `alias`)', function() {
 			var result = jsonSql.build({
 				table: 'users',
-				fields: {name: {name: 'name_1', table: 'users', alias: 'name_2'}}
+				fields: {name: {field: 'name_1', table: 'users', alias: 'name_2'}}
 			});
 
 			expect(result.query).to.be.equal('select "users"."name_1" as "name_2" from "users";');
-			expect(result.values).to.be.eql({});
-		});
-
-		it('should be ok with object(`name`,`table`,`alias`,`cast`)', function() {
-			var result = jsonSql.build({
-				table: 'users',
-				fields: {name: {name: 'name_1', table: 'users', alias: 'name_2', cast: 'integer'}}
-			});
-
-			expect(result.query).to.be.equal('select cast("users"."name_1" as integer) as "name_2" from ' +
-				'"users";');
 			expect(result.values).to.be.eql({});
 		});
 
@@ -213,119 +161,44 @@ describe('Select', function() {
 			expect(result.values).to.be.eql({});
 		});
 
-		it('should be ok with object(`expression.pattern`)', function() {
+		it('should be ok with object(`expression`, `alias`)', function() {
 			var result = jsonSql.build({
 				table: 'users',
 				fields: [{
-					expression: {
-						pattern: 'count(*)'
-					}
+					expression: 'count(*)',
+					alias: 'count'
 				}]
 			});
 
-			expect(result.query).to.be.equal('select count(*) from "users";');
+			expect(result.query).to.be.equal('select count(*) as "count" from "users";');
 			expect(result.values).to.be.eql({});
 		});
 
-		it('should throw error if `expression` contains unexisting value', function() {
-			expect(function() {
-				jsonSql.build({
-					table: 'users',
-					fields: [{expression: 'count({a})'}]
-				});
-			}).to.throw('Field `a` is required in `expression.values` property');
-		});
-
-		it('should be ok with object(`expression.pattern`,`expression.values`)', function() {
+		it('should be ok with object(`expression`, `field`, `alias`)', function() {
 			var result = jsonSql.build({
 				table: 'users',
 				fields: [{
-					expression: {
-						pattern: 'sum({a})',
-						values: {a: 1}
-					}
+					expression: 'sum',
+					field: 'income',
+					alias: 'sum'
 				}]
 			});
 
-			expect(result.query).to.be.equal('select sum(1) from "users";');
+			expect(result.query).to.be.equal('select sum("income") as "sum" from "users";');
 			expect(result.values).to.be.eql({});
 		});
 
-		it('should be ok with object(`func`)', function() {
+		it('should be ok with object(`expression`[], `field`, `alias`)', function() {
 			var result = jsonSql.build({
 				table: 'users',
 				fields: [{
-					func: 'random'
+					expression: ['abs', 'sum'],
+					field: 'income',
+					alias: 'sum'
 				}]
 			});
 
-			expect(result.query).to.be.equal('select random() from "users";');
-			expect(result.values).to.be.eql({});
-		});
-
-		it('should be ok with object(`func.name`)', function() {
-			var result = jsonSql.build({
-				table: 'users',
-				fields: [{
-					func: {name: 'random'}
-				}]
-			});
-
-			expect(result.query).to.be.equal('select random() from "users";');
-			expect(result.values).to.be.eql({});
-		});
-
-		it('should be ok with object(`func.name`,`func.args`)', function() {
-			var result = jsonSql.build({
-				table: 'users',
-				fields: [{
-					func: {
-						name: 'sum',
-						args: [1]
-					}
-				}]
-			});
-
-			expect(result.query).to.be.equal('select sum(1) from "users";');
-			expect(result.values).to.be.eql({});
-		});
-
-		it('should be ok with object(`select`)', function() {
-			var result = jsonSql.build({
-				table: 'users',
-				fields: [{
-					select: {table: 'users'}
-				}]
-			});
-
-			expect(result.query).to.be.equal('select (select * from "users") from "users";');
-			expect(result.values).to.be.eql({});
-		});
-
-		it('should be ok with object(`query`)', function() {
-			var result = jsonSql.build({
-				table: 'users',
-				fields: [{
-					query: {
-						type: 'select',
-						table: 'users'
-					}
-				}]
-			});
-
-			expect(result.query).to.be.equal('select (select * from "users") from "users";');
-			expect(result.values).to.be.eql({});
-		});
-
-		it('should be ok with object(`value`)', function() {
-			var result = jsonSql.build({
-				table: 'users',
-				fields: [{
-					value: 1
-				}]
-			});
-
-			expect(result.query).to.be.equal('select 1 from "users";');
+			expect(result.query).to.be.equal('select abs(sum("income")) as "sum" from "users";');
 			expect(result.values).to.be.eql({});
 		});
 	});
@@ -341,23 +214,13 @@ describe('Select', function() {
 			expect(result.values).to.be.eql({});
 		});
 
-		it('should throw error if `alias` has wrong type', function() {
-			expect(function() {
-				jsonSql.build({
-					table: 'users',
-					alias: 1
-				});
-			}).to.throw('`alias` property should have one of expected types: ' +
-				'"string", "object" in `select` clause');
-		});
-
 		it('should throw error if object `alias` does not have `name` property', function() {
 			expect(function() {
 				jsonSql.build({
 					table: 'users',
 					alias: {}
 				});
-			}).to.throw('`alias.name` property is required');
+			}).to.throw('Alias `name` property is required');
 		});
 
 		it('should be ok with object `alias`(`name`) property', function() {
@@ -577,7 +440,7 @@ describe('Select', function() {
 	});
 
 	describe('condition', function() {
-		describe('comparison operators', function() {
+		describe('compare operators', function() {
 			it('should throw error with wrong operator', function() {
 				expect(function() {
 					jsonSql.build({
@@ -597,7 +460,7 @@ describe('Select', function() {
 					}
 				});
 
-				expect(result.query).to.be.equal('select * from "users" where "name" = $p1;');
+				expect(result.query).to.be.equal('select * from "users" where "name" = ${p1};');
 				expect(result.values).to.be.eql({
 					p1: 'John'
 				});
@@ -611,7 +474,7 @@ describe('Select', function() {
 					}
 				});
 
-				expect(result.query).to.be.equal('select * from "users" where "name" = $p1;');
+				expect(result.query).to.be.equal('select * from "users" where "name" = ${p1};');
 				expect(result.values).to.be.eql({
 					p1: 'John'
 				});
@@ -625,7 +488,7 @@ describe('Select', function() {
 					}
 				});
 
-				expect(result.query).to.be.equal('select * from "users" where "name" != $p1;');
+				expect(result.query).to.be.equal('select * from "users" where "name" != ${p1};');
 				expect(result.values).to.be.eql({
 					p1: 'John'
 				});
@@ -639,7 +502,7 @@ describe('Select', function() {
 					}
 				});
 
-				expect(result.query).to.be.equal('select * from "users" where "name" > $p1;');
+				expect(result.query).to.be.equal('select * from "users" where "name" > ${p1};');
 				expect(result.values).to.be.eql({
 					p1: 'John'
 				});
@@ -653,7 +516,7 @@ describe('Select', function() {
 					}
 				});
 
-				expect(result.query).to.be.equal('select * from "users" where "name" < $p1;');
+				expect(result.query).to.be.equal('select * from "users" where "name" < ${p1};');
 				expect(result.values).to.be.eql({
 					p1: 'John'
 				});
@@ -667,7 +530,7 @@ describe('Select', function() {
 					}
 				});
 
-				expect(result.query).to.be.equal('select * from "users" where "name" >= $p1;');
+				expect(result.query).to.be.equal('select * from "users" where "name" >= ${p1};');
 				expect(result.values).to.be.eql({
 					p1: 'John'
 				});
@@ -681,7 +544,7 @@ describe('Select', function() {
 					}
 				});
 
-				expect(result.query).to.be.equal('select * from "users" where "name" <= $p1;');
+				expect(result.query).to.be.equal('select * from "users" where "name" <= ${p1};');
 				expect(result.values).to.be.eql({
 					p1: 'John'
 				});
@@ -699,11 +562,11 @@ describe('Select', function() {
 				expect(result.values).to.be.eql({});
 			});
 
-			it('should be ok with `$isNot` operator', function() {
+			it('should be ok with `$isnot` operator', function() {
 				var result = jsonSql.build({
 					table: 'users',
 					condition: {
-						name: {$isNot: null}
+						name: {$isnot: null}
 					}
 				});
 
@@ -719,7 +582,7 @@ describe('Select', function() {
 					}
 				});
 
-				expect(result.query).to.be.equal('select * from "users" where "name" like $p1;');
+				expect(result.query).to.be.equal('select * from "users" where "name" like ${p1};');
 				expect(result.values).to.be.eql({
 					p1: 'John%'
 				});
@@ -895,7 +758,7 @@ describe('Select', function() {
 							]
 						}
 					});
-				}).to.throw('Unknown operator "$wrong"');
+				}).to.throw('Unknown logical operator "$wrong"');
 			});
 
 			it('should be ok with default logical operator(`$and`)', function() {
@@ -907,7 +770,7 @@ describe('Select', function() {
 					}
 				});
 
-				expect(result.query).to.be.equal('select * from "users" where "name" = $p1 and "age" = 12;');
+				expect(result.query).to.be.equal('select * from "users" where "name" = ${p1} and "age" = 12;');
 				expect(result.values).to.be.eql({
 					p1: 'John'
 				});
@@ -941,7 +804,7 @@ describe('Select', function() {
 					}
 				});
 
-				expect(result.query).to.be.equal('select * from "users" where "name" = $p1 and "age" = 12;');
+				expect(result.query).to.be.equal('select * from "users" where "name" = ${p1} and "age" = 12;');
 				expect(result.values).to.be.eql({
 					p1: 'John'
 				});
@@ -958,7 +821,7 @@ describe('Select', function() {
 					}
 				});
 
-				expect(result.query).to.be.equal('select * from "users" where "name" = $p1 and "age" = 12;');
+				expect(result.query).to.be.equal('select * from "users" where "name" = ${p1} and "age" = 12;');
 				expect(result.values).to.be.eql({
 					p1: 'John'
 				});
@@ -975,7 +838,7 @@ describe('Select', function() {
 					}
 				});
 
-				expect(result.query).to.be.equal('select * from "users" where "name" = $p1 or "age" = 12;');
+				expect(result.query).to.be.equal('select * from "users" where "name" = ${p1} or "age" = 12;');
 				expect(result.values).to.be.eql({
 					p1: 'John'
 				});
@@ -992,7 +855,7 @@ describe('Select', function() {
 					}
 				});
 
-				expect(result.query).to.be.equal('select * from "users" where "name" = $p1 or "age" = 12;');
+				expect(result.query).to.be.equal('select * from "users" where "name" = ${p1} or "age" = 12;');
 				expect(result.values).to.be.eql({
 					p1: 'John'
 				});
@@ -1009,7 +872,7 @@ describe('Select', function() {
 					}
 				});
 
-				expect(result.query).to.be.equal('select * from "users" where not ("name" = $p1 and ' +
+				expect(result.query).to.be.equal('select * from "users" where not ("name" = ${p1} and ' +
 					'"age" = 12);');
 				expect(result.values).to.be.eql({
 					p1: 'John'
@@ -1027,7 +890,7 @@ describe('Select', function() {
 					}
 				});
 
-				expect(result.query).to.be.equal('select * from "users" where not ("name" = $p1 and ' +
+				expect(result.query).to.be.equal('select * from "users" where not ("name" = ${p1} and ' +
 					'"age" = 12);');
 				expect(result.values).to.be.eql({
 					p1: 'John'
@@ -1052,8 +915,8 @@ describe('Select', function() {
 
 				expect(result.query).to.be.equal(
 					'select * from "users" ' +
-						'where ("name" = $p1 or "age" = 12) and ' +
-						'("name" = $p2 or "age" = 14);'
+						'where ("name" = ${p1} or "age" = 12) and ' +
+						'("name" = ${p2} or "age" = 14);'
 				);
 				expect(result.values).to.be.eql({
 					p1: 'John',
@@ -1081,8 +944,8 @@ describe('Select', function() {
 
 				expect(result.query).to.be.equal(
 					'select * from "users" ' +
-						'where ("name" = $p1 or "age" = 12) and ' +
-						'("name" = $p2 or "age" = 14);'
+						'where ("name" = ${p1} or "age" = 12) and ' +
+						'("name" = ${p2} or "age" = 14);'
 				);
 				expect(result.values).to.be.eql({
 					p1: 'John',
@@ -1106,8 +969,8 @@ describe('Select', function() {
 
 				expect(result.query).to.be.equal(
 					'select * from "users" ' +
-						'where ("name" = $p1 and "age" = 12) or ' +
-						'("name" = $p2 and "age" = 14);'
+						'where ("name" = ${p1} and "age" = 12) or ' +
+						'("name" = ${p2} and "age" = 14);'
 				);
 				expect(result.values).to.be.eql({
 					p1: 'John',
@@ -1135,8 +998,8 @@ describe('Select', function() {
 
 				expect(result.query).to.be.equal(
 					'select * from "users" ' +
-						'where ("name" = $p1 and "age" = 12) or ' +
-						'("name" = $p2 and "age" = 14);'
+						'where ("name" = ${p1} and "age" = 12) or ' +
+						'("name" = ${p2} and "age" = 14);'
 				);
 				expect(result.values).to.be.eql({
 					p1: 'John',
@@ -1158,8 +1021,8 @@ describe('Select', function() {
 
 				expect(result.query).to.be.equal(
 					'select * from "users" ' +
-						'where ("name" = $p1 and "age" = 12) and ' +
-						'("name" = $p2 and "age" = 14);');
+						'where ("name" = ${p1} and "age" = 12) and ' +
+						'("name" = ${p2} and "age" = 14);');
 				expect(result.values).to.be.eql({
 					p1: 'John',
 					p2: 'Mark'
@@ -1182,8 +1045,8 @@ describe('Select', function() {
 
 				expect(result.query).to.be.equal(
 					'select * from "users" ' +
-						'where ("name" = $p1 and "age" = 12) and ' +
-						'("name" = $p2 and "age" = 14);'
+						'where ("name" = ${p1} and "age" = 12) and ' +
+						'("name" = ${p2} and "age" = 14);'
 				);
 				expect(result.values).to.be.eql({
 					p1: 'John',
@@ -1211,8 +1074,8 @@ describe('Select', function() {
 
 				expect(result.query).to.be.equal(
 					'select * from "users" ' +
-						'where ("name" = $p1 and "age" = 12) and ' +
-						'("name" = $p2 and "age" = 14);'
+						'where ("name" = ${p1} and "age" = 12) and ' +
+						'("name" = ${p2} and "age" = 14);'
 				);
 				expect(result.values).to.be.eql({
 					p1: 'John',
@@ -1221,22 +1084,18 @@ describe('Select', function() {
 			});
 
 			it('should be ok with `$or`:[`$or`, `$or`]', function() {
-				var date1 = new Date();
-				var date2 = new Date();
 				var result = jsonSql.build({
 					table: 'users',
 					condition: {
 						$or: [{
 							$or: {
 								name: 'John',
-								age: 12,
-								date: date1
+								age: 12
 							}
 						}, {
 							$or: {
 								name: 'Mark',
-								age: 14,
-								date: date2
+								age: 14
 							}
 						}]
 					}
@@ -1244,14 +1103,12 @@ describe('Select', function() {
 
 				expect(result.query).to.be.equal(
 					'select * from "users" ' +
-						'where ("name" = $p1 or "age" = 12 or "date" = $p2) or ' +
-						'("name" = $p3 or "age" = 14 or "date" = $p4);'
+						'where ("name" = ${p1} or "age" = 12) or ' +
+						'("name" = ${p2} or "age" = 14);'
 				);
 				expect(result.values).to.be.eql({
 					p1: 'John',
-					p2: date1,
-					p3: 'Mark',
-					p4: date2
+					p2: 'Mark'
 				});
 			});
 		});
