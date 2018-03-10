@@ -5,11 +5,13 @@ var mocha = require('gulp-mocha');
 var jshint = require('gulp-jshint');
 
 gulp.task('test', function() {
-    return gulp.src(['./tests/**/*.js'], {read: false})
-        .pipe(mocha({
-            reporter: 'spec',
-            bail: true
-        }));
+    return gulp.src(['./tests/*.js'], {read: false})
+        .pipe(
+            mocha({
+                reporter: 'spec',
+                bail: true
+            })
+        );
 });
 
 gulp.task('lint', function() {
@@ -19,7 +21,7 @@ gulp.task('lint', function() {
 });
 
 gulp.task('lintTests', function() {
-    return gulp.src('./tests/**/*.js')
+    return gulp.src('./tests/*.js')
         .pipe(jshint())
         .pipe(jshint.reporter('unix'));
 });
