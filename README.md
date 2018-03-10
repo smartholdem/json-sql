@@ -135,13 +135,6 @@ Then run tests with command:
 ``` bash
 $ gulp test
 ```
-
-Or run tests coverage with command:
-
-``` bash
-$ gulp coverage
-```
-
 ## License
 
 [MIT](./LICENSE)
